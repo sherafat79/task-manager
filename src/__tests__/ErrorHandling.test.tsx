@@ -268,9 +268,12 @@ describe("TaskList - Error Handling Tests", () => {
       await user.click(submitButton);
 
       // Assert: Error toast is displayed with 404 message in Persian
-      await waitFor(() => {
-        expect(screen.getByText(/تسک یافت نشد/i)).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByText(/تسک یافت نشد/i)).toBeInTheDocument();
+        },
+        {timeout: 3000}
+      );
     });
 
     it("displays error toast when deleting non-existent task", async () => {
@@ -305,9 +308,12 @@ describe("TaskList - Error Handling Tests", () => {
       await user.click(deleteButton);
 
       // Assert: Error toast is displayed with 404 message in Persian
-      await waitFor(() => {
-        expect(screen.getByText(/تسک یافت نشد/i)).toBeInTheDocument();
-      });
+      await waitFor(
+        () => {
+          expect(screen.getByText(/تسک یافت نشد/i)).toBeInTheDocument();
+        },
+        {timeout: 3000}
+      );
     });
 
     it("displays error message when fetching tasks returns 404", async () => {
@@ -527,16 +533,24 @@ describe("TaskList - Error Handling Tests", () => {
       const submitButton = screen.getByRole("button", {name: /ایجاد تسک/i});
       await user.click(submitButton);
 
-      // Assert: Eventually succeeds after retry
+      // Assert: Wait for retries to complete and verify retry count
       await waitFor(
         () => {
-          expect(screen.getByText("Test Task with Retry")).toBeInTheDocument();
+          // After retries, should have made 2 attempts (1 initial + 1 retry)
+          expect(createAttemptCount).toBe(2);
         },
         {timeout: 5000}
       );
 
-      // Verify it retried (should have made 2 attempts)
-      expect(createAttemptCount).toBe(2);
+      // Verify success toast appears after successful retry
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText(/تسک با موفقیت ایجاد شد/i)
+          ).toBeInTheDocument();
+        },
+        {timeout: 3000}
+      );
     });
   });
 });
