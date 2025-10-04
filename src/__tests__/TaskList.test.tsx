@@ -140,7 +140,7 @@ describe("TaskList - Happy Path Integration Tests", () => {
     });
 
     // Fill in the form
-    const titleInput = screen.getByLabelText(/عنوان تسک/i);
+    const titleInput = screen.getByLabelText(/عنوان/i);
     const descriptionInput = screen.getByLabelText(/توضیحات/i);
 
     await user.type(titleInput, "New Task from Test");
@@ -225,5 +225,172 @@ describe("TaskList - Happy Path Integration Tests", () => {
     await waitFor(() => {
       expect(checkbox).not.toBeChecked();
     });
+  });
+});
+
+describe("TaskList - Loading State Tests", () => {
+  beforeEach(() => {
+    // Clear localStorage before each test to ensure clean state
+    localStorage.clear();
+  });
+
+  it("shows skeleton loaders during initial fetch", async () => {
+    // Arrange: Setup handler with delay to capture loading state
+    server.use(
+      http.get("/api/tasks", async () => {
+        await delay(500); // Delay to ensure we can test loading state
+        const tasks = db.getTasks();
+        return HttpResponse.json({data: tasks});
+      })
+    );
+
+    // Act: Render the TaskList component
+    renderWithProviders(<TaskList />);
+
+    // Assert: Skeleton loaders are visible during loading
+    const skeletons = screen.getAllByTestId("task-skeleton");
+    expect(skeletons.length).toBeGreaterThan(0);
+    expect(skeletons).toHaveLength(3); // TaskList renders 3 skeleton loaders
+
+    // Wait for loading to complete
+    await waitForElementToBeRemoved(
+      () => screen.queryAllByTestId("task-skeleton"),
+      {timeout: 3000}
+    );
+
+    // Assert: Skeletons are removed after loading
+    expect(screen.queryByTestId("task-skeleton")).not.toBeInTheDocument();
+  });
+
+  it("shows loading spinner on delete button during mutation", async () => {
+    // Arrange: Create a task and setup handler with delay
+    db.createTask({
+      title: "Task with Loading Spinner",
+      description: "Testing delete button loading state",
+    });
+
+    server.use(
+      http.get("/api/tasks", async () => {
+        await delay(100);
+        const tasks = db.getTasks();
+        return HttpResponse.json({data: tasks});
+      }),
+      http.delete("/api/tasks/:id", async ({params}) => {
+        await delay(1000); // Longer delay to capture loading spinner
+        const {id} = params;
+        const deleted = db.deleteTask(id as string);
+
+        if (!deleted) {
+          return HttpResponse.json({message: "تسک یافت نشد"}, {status: 404});
+        }
+
+        return HttpResponse.json(
+          {message: "تسک با موفقیت حذف شد"},
+          {status: 200}
+        );
+      })
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<TaskList />);
+
+    // Wait for task to appear
+    await waitFor(() => {
+      expect(screen.getByText("Task with Loading Spinner")).toBeInTheDocument();
+    });
+
+    // Act: Click the delete button
+    const deleteButton = screen.getByRole("button", {name: /حذف تسک/i});
+    await user.click(deleteButton);
+
+    // Assert: Loading spinner appears on the delete button
+    await waitFor(() => {
+      const spinner = screen.getByRole("progressbar");
+      expect(spinner).toBeInTheDocument();
+    });
+
+    // Wait for deletion to complete
+    await waitFor(
+      () => {
+        expect(
+          screen.queryByText("Task with Loading Spinner")
+        ).not.toBeInTheDocument();
+      },
+      {timeout: 2000}
+    );
+
+    // Assert: Loading spinner is removed after mutation completes
+    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+  });
+
+  it("disables buttons during toggle mutation", async () => {
+    // Arrange: Create a task and setup handler with delay
+    db.createTask({
+      title: "Task to Toggle with Loading",
+      description: "Testing toggle loading state",
+    });
+
+    server.use(
+      http.get("/api/tasks", async () => {
+        await delay(100);
+        const tasks = db.getTasks();
+        return HttpResponse.json({data: tasks});
+      }),
+      http.put("/api/tasks/:id", async ({request, params}) => {
+        await delay(1000); // Longer delay to capture loading state
+        const {id} = params;
+        const body = (await request.json()) as UpdateTaskInput;
+        const updatedTask = db.updateTask(id as string, body);
+
+        if (!updatedTask) {
+          return HttpResponse.json({message: "تسک یافت نشد"}, {status: 404});
+        }
+
+        return HttpResponse.json({data: updatedTask});
+      })
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<TaskList />);
+
+    // Wait for task to appear
+    await waitFor(() => {
+      expect(
+        screen.getByText("Task to Toggle with Loading")
+      ).toBeInTheDocument();
+    });
+
+    // Get buttons before clicking
+    const checkbox = screen.getByRole("checkbox");
+    const editButton = screen.getByRole("button", {name: /ویرایش تسک/i});
+    const deleteButton = screen.getByRole("button", {name: /حذف تسک/i});
+
+    // Verify buttons are enabled initially
+    expect(checkbox).not.toBeDisabled();
+    expect(editButton).not.toBeDisabled();
+    expect(deleteButton).not.toBeDisabled();
+
+    // Act: Click the checkbox to toggle
+    await user.click(checkbox);
+
+    // Assert: Buttons are disabled during mutation
+    await waitFor(() => {
+      expect(checkbox).toBeDisabled();
+      expect(editButton).toBeDisabled();
+      expect(deleteButton).toBeDisabled();
+    });
+
+    // Wait for mutation to complete
+    await waitFor(
+      () => {
+        expect(checkbox).not.toBeDisabled();
+      },
+      {timeout: 2000}
+    );
+
+    // Assert: Buttons are re-enabled after mutation completes
+    expect(checkbox).not.toBeDisabled();
+    expect(editButton).not.toBeDisabled();
+    expect(deleteButton).not.toBeDisabled();
   });
 });
