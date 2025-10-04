@@ -1,5 +1,9 @@
 import {Card, CardContent, CardActions, Skeleton, Box} from "@mui/material";
 
+/**
+ * TaskSkeleton component - Loading placeholder for task cards
+ * Displays animated skeleton loaders that match the TaskCard layout
+ */
 export default function TaskSkeleton() {
   return (
     <Card

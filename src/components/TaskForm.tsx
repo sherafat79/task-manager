@@ -20,6 +20,11 @@ interface FormErrors {
   description?: string;
 }
 
+/**
+ * TaskForm component - Reusable form for creating and editing tasks
+ * Includes validation, error handling, and loading states
+ * Supports both create and update operations through different initial values
+ */
 export default function TaskForm({
   initialValues = {title: "", description: ""},
   onSubmit,

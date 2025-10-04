@@ -1,6 +1,10 @@
 import {Box, Typography} from "@mui/material";
 import InboxIcon from "@mui/icons-material/Inbox";
 
+/**
+ * EmptyState component - Displays when no tasks exist
+ * Shows a friendly message encouraging users to add their first task
+ */
 export default function EmptyState() {
   return (
     <Box

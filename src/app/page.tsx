@@ -3,6 +3,10 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import TaskList from "@/components/TaskList";
 
+/**
+ * Home page component - Main entry point for the task manager application
+ * Renders the TaskList component within a centered container
+ */
 export default function Home() {
   return (
     <Container maxWidth="md">

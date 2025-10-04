@@ -1,5 +1,5 @@
 import type {Task, CreateTaskInput, UpdateTaskInput} from "@/types/task";
-import type {ApiResponse, ApiError} from "@/types/api";
+import type {ApiError} from "@/types/api";
 
 const API_BASE_URL = "/api/tasks";
 

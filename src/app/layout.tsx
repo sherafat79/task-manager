@@ -10,6 +10,16 @@ import {theme, cacheRtl} from "@/lib/theme";
 import {queryClient} from "@/lib/queryClient";
 import "./globals.css";
 
+/**
+ * Root layout component for the Next.js application
+ * Sets up all necessary providers and initializes MSW in development
+ *
+ * Providers included:
+ * - CacheProvider: Emotion cache with RTL support
+ * - ThemeProvider: Material UI theme with Persian configuration
+ * - QueryClientProvider: React Query for server state management
+ * - Toaster: Toast notifications for user feedback
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
